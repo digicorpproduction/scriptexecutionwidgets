@@ -1,0 +1,70 @@
+Add-Type -AssemblyName System.Windows.Forms
+
+$form = New-Object System.Windows.Forms.Form 
+$form.Text = "Script Executor"
+$form.Size = New-Object System.Drawing.Size(500,300)
+
+$pathLabel = New-Object System.Windows.Forms.Label
+$pathLabel.Text = "Script Path:"
+$pathLabel.Location = New-Object System.Drawing.Point(10,10)
+$pathLabel.AutoSize = $true
+
+$pathBox = New-Object System.Windows.Forms.TextBox 
+$pathBox.Location = New-Object System.Drawing.Point(100,10) 
+$pathBox.Size = New-Object System.Drawing.Size(350,20)
+
+$argsLabel = New-Object System.Windows.Forms.Label
+$argsLabel.Text = "Arguments:"
+$argsLabel.Location = New-Object System.Drawing.Point(10,50) 
+$argsLabel.AutoSize = $true
+
+$argsBox = New-Object System.Windows.Forms.TextBox
+$argsBox.Location = New-Object System.Drawing.Point(100,50)
+$argsBox.Size = New-Object System.Drawing.Size(350,20)
+
+$runButton = New-Object System.Windows.Forms.Button
+$runButton.Text = "Run"
+$runButton.Location = New-Object System.Drawing.Point(415,45)
+$runButton.Add_Click({
+    $scriptPath = $pathBox.Text
+    $arguments = $argsBox.Text -split " "
+    
+    & $scriptPath $arguments *>&1 | Out-File C:\Temp\script-log.txt
+    
+    $log = Get-Content C:\Temp\script-log.txt
+
+    $logForm = New-Object System.Windows.Forms.Form
+    $logForm.Text = "Script Log"
+    $logForm.Size = New-Object System.Drawing.Size(600,400)
+
+    $logText = New-Object System.Windows.Forms.TextBox 
+    $logText.Multiline = $true
+    $logText.ScrollBars = "Vertical"    
+    $logText.Size = New-Object System.Drawing.Size(575,325)
+    $logText.Text = $log
+    $logText.Location = New-Object System.Drawing.Point(15,15)
+    $logForm.Controls.Add($logText) 
+
+    $saveButton = New-Object System.Windows.Forms.Button
+    $saveButton.Text = "Save Log"
+    $saveButton.Add_Click({
+        $saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+        $saveFileDialog.Filter = "Text Files (*.txt)|*.txt"
+        if ($saveFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+            Set-Content $saveFileDialog.FileName -Value $logText.Text
+        }
+    })
+    $saveButton.Location = New-Object System.Drawing.Point(500,360) 
+    $saveButton.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Right
+    $logForm.Controls.Add($saveButton)
+
+    $logForm.ShowDialog()
+})
+
+$form.Controls.Add($pathLabel)
+$form.Controls.Add($pathBox)
+$form.Controls.Add($argsLabel)  
+$form.Controls.Add($argsBox)
+$form.Controls.Add($runButton)
+
+$form.ShowDialog()
